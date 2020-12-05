@@ -159,7 +159,7 @@ export type EnvironmentOpts = {|
   +isLibrary?: boolean,
   +minify?: boolean,
   +scopeHoist?: boolean,
-  +sourceMap?: ?TargetSourceMapOptions
+  +sourceMap?: ?TargetSourceMapOptions,
 |};
 
 /**
@@ -997,6 +997,7 @@ export interface BundleGraph<TBundle: Bundle> {
   getDependencies(asset: Asset): Array<Dependency>;
   /** Get the dependencies that require the asset */
   getIncomingDependencies(asset: Asset): Array<Dependency>;
+  isEntryBundleGroup(bundleGroup: BundleGroup): boolean;
   /**
    * Returns undefined if the specified dependency was excluded or wasn't async \
    * and otherwise the BundleGroup or Asset that the dependency resolves to.

@@ -1318,4 +1318,13 @@ export default class BundleGraph {
       this._graph.addEdge(edge.from, edge.to, edge.type);
     }
   }
+
+  isEntryBundleGroup(bundleGroup: BundleGroup): boolean {
+    return this._graph
+      .getNodesConnectedTo(
+        nullthrows(this._graph.getNode(getBundleGroupId(bundleGroup))),
+        'bundle',
+      )
+      .some(n => n.type === 'root');
+  }
 }
