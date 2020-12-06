@@ -68,7 +68,7 @@ export default (new Packager({
     // If scope hoisting is enabled, we use a different code path.
     if (bundle.env.scopeHoist) {
       let wrappedAssets = new Set<string>();
-      let {ast, referencedAssets} = link({
+      let {ast, referencedAssets, hoistedCalls} = link({
         bundle,
         bundleGraph,
         ast: await concat({
@@ -89,6 +89,7 @@ export default (new Packager({
         bundleGraph,
         bundle,
         ast,
+        hoistedCalls,
         referencedAssets,
         parcelRequireName,
         options,

@@ -14,6 +14,7 @@ import type {
   LVal,
   ObjectProperty,
   Program,
+  Statement,
   VariableDeclaration,
   VariableDeclarator,
 } from '@babel/types';
@@ -145,7 +146,7 @@ export function generateBundleImports(
   // Implement an interface consistent with other formats
   // eslint-disable-next-line no-unused-vars
   bundleGraph: BundleGraph<NamedBundle>,
-) {
+): Array<Statement> {
   let specifiers: Array<ObjectProperty> = [...assets].map(asset => {
     let id = getName(asset, 'init');
     return t.objectProperty(t.identifier(id), t.identifier(id), false, true);
@@ -183,6 +184,8 @@ export function generateBundleImports(
   } else {
     path.unshiftContainer('body', [t.expressionStatement(expression)]);
   }
+
+  return [];
 }
 
 export function generateExternalImport(

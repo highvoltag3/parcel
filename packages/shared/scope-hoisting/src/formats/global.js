@@ -10,13 +10,13 @@ import type {
 } from '@parcel/types';
 import type {NodePath} from '@babel/traverse';
 import type {
+  CallExpression,
   ExpressionStatement,
   Identifier,
   Node,
   Program,
   Statement,
   StringLiteral,
-  CallExpression,
 } from '@babel/types';
 import type {ExternalBundle, ExternalModule} from '../types';
 
@@ -55,7 +55,7 @@ export function generateBundleImports(
   {bundle, assets}: ExternalBundle,
   path: NodePath<Program>,
   bundleGraph: BundleGraph<NamedBundle>,
-) {
+): Array<Statement> {
   let statements = [];
   if (from.env.isWorker()) {
     statements.push(
@@ -64,7 +64,6 @@ export function generateBundleImports(
       }),
     );
   }
-  path.unshiftContainer('body', statements);
 
   for (let asset of assets) {
     // `var ${id};` was inserted already, add RHS
@@ -80,6 +79,8 @@ export function generateBundleImports(
 
     path.scope.getBinding('parcelRequire')?.reference(res[0].get('callee'));
   }
+
+  return statements;
 }
 
 export function generateExternalImport(

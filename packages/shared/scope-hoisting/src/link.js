@@ -78,7 +78,11 @@ const FAKE_INIT_TEMPLATE = template.statement<
   return EXPORTS;
 }`);
 
-type LinkResult = {|ast: File, referencedAssets: Set<Asset>|};
+type LinkResult = {|
+  ast: File,
+  referencedAssets: Set<Asset>,
+  hoistedCalls: Array<Statement>,
+|};
 
 export function link({
   bundle,
@@ -101,8 +105,7 @@ export function link({
 
   let importedFiles = new Map<string, ExternalModule | ExternalBundle>();
   let referencedAssets = new Set();
-
-  // return {ast, referencedAssets};
+  let hoistedCalls = [];
 
   // If building a library, the target is actually another bundler rather
   // than the final output that could be loaded in a browser. So, loader
@@ -740,7 +743,9 @@ export function link({
 
         for (let file of importedFiles.values()) {
           if (file.bundle) {
-            format.generateBundleImports(bundle, file, path, bundleGraph);
+            hoistedCalls.push(
+              ...format.generateBundleImports(bundle, file, path, bundleGraph),
+            );
           } else {
             format.generateExternalImport(bundle, file, path);
           }
@@ -806,7 +811,7 @@ export function link({
     },
   });
 
-  return {ast, referencedAssets};
+  return {ast, referencedAssets, hoistedCalls};
 }
 
 function maybeAddEsModuleFlag(scope, mod) {

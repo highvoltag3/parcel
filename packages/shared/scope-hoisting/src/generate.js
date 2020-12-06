@@ -9,36 +9,51 @@ import type {
 import type {
   ArrayExpression,
   ExpressionStatement,
-  Identifier,
   File,
+  Identifier,
   Statement,
+  StringLiteral,
+  VariableDeclaration,
 } from '@babel/types';
 
 import babelGenerate from '@babel/generator';
 import invariant from 'assert';
-import {isEntry} from './utils';
+import path from 'path';
+import fs from 'fs';
+import {parse} from '@babel/parser';
+import {isEntry, needsPrelude} from './utils';
 import SourceMap from '@parcel/source-map';
 import * as t from '@babel/types';
 import template from '@babel/template';
 
-const REGISTER_TEMPLATE = template.statement<
+const PRELUDE_PATH = path.join(__dirname, 'prelude.js');
+const PRELUDE = parse(
+  fs.readFileSync(path.join(__dirname, 'prelude.js'), 'utf8'),
+  {sourceFilename: PRELUDE_PATH},
+);
+
+const PARCEL_REQUIRE_NAME_DECL = template.statement<
+  {|NAME: StringLiteral|},
+  VariableDeclaration,
+>(`var parcelRequireName = NAME;`);
+
+const REGISTER_TEMPLATE = template.statements<
   {|
     REFERENCED_IDS: ArrayExpression,
     STATEMENTS: Array<Statement>,
     PARCEL_REQUIRE: Identifier,
   |},
   ExpressionStatement,
->(`(function() {
-  function $parcel$bundleWrapper() {
-    if ($parcel$bundleWrapper._executed) return;
-    STATEMENTS;
-    $parcel$bundleWrapper._executed = true;
-  }
-  var $parcel$referencedAssets = REFERENCED_IDS;
-  for (var $parcel$i = 0; $parcel$i < $parcel$referencedAssets.length; $parcel$i++) {
-    PARCEL_REQUIRE.registerBundle($parcel$referencedAssets[$parcel$i], $parcel$bundleWrapper);
-  }
-})()`);
+>(`
+function $parcel$bundleWrapper() {
+  if ($parcel$bundleWrapper._executed) return;
+  STATEMENTS;
+  $parcel$bundleWrapper._executed = true;
+}
+var $parcel$referencedAssets = REFERENCED_IDS;
+for (var $parcel$i = 0; $parcel$i < $parcel$referencedAssets.length; $parcel$i++) {
+  PARCEL_REQUIRE.registerBundle($parcel$referencedAssets[$parcel$i], $parcel$bundleWrapper);
+}`);
 const WRAPPER_TEMPLATE = template.statement<
   {|STATEMENTS: Array<Statement>|},
   ExpressionStatement,
@@ -48,6 +63,7 @@ export function generate({
   bundleGraph,
   bundle,
   ast,
+  hoistedCalls,
   referencedAssets,
   parcelRequireName,
   options,
@@ -55,6 +71,7 @@ export function generate({
   bundleGraph: BundleGraph<NamedBundle>,
   bundle: NamedBundle,
   ast: File,
+  hoistedCalls: Array<Statement>,
   options: PluginOptions,
   referencedAssets: Set<Asset>,
   parcelRequireName: string,
@@ -73,21 +90,33 @@ export function generate({
   // at the right time (after other bundle dependencies are loaded).
   let statements = ast.program.body;
   if (bundle.env.outputFormat === 'global') {
-    statements = isAsync
-      ? [
-          REGISTER_TEMPLATE({
-            STATEMENTS: statements,
-            REFERENCED_IDS: t.arrayExpression(
-              [mainEntry, ...referencedAssets]
-                .filter(Boolean)
-                .map(asset =>
-                  t.stringLiteral(bundleGraph.getAssetPublicId(asset)),
-                ),
-            ),
-            PARCEL_REQUIRE: t.identifier(parcelRequireName),
-          }),
-        ]
-      : [WRAPPER_TEMPLATE({STATEMENTS: statements})];
+    // Wrap async bundles in a closure and register with parcelRequire so they are executed
+    // at the right time (after other bundle dependencies are loaded).
+    if (isAsync) {
+      statements = REGISTER_TEMPLATE({
+        STATEMENTS: statements,
+        REFERENCED_IDS: t.arrayExpression(
+          [mainEntry, ...referencedAssets]
+            .filter(Boolean)
+            .map(asset => t.stringLiteral(bundleGraph.getAssetPublicId(asset))),
+        ),
+        PARCEL_REQUIRE: t.identifier(parcelRequireName),
+      });
+    }
+
+    if (needsPrelude(bundle, bundleGraph)) {
+      statements.unshift(
+        PARCEL_REQUIRE_NAME_DECL({NAME: t.stringLiteral(parcelRequireName)}),
+        ...PRELUDE.program.body,
+      );
+    }
+
+    statements.unshift(
+      // importScripts calls that potentially declare parcelRequire
+      ...hoistedCalls,
+    );
+
+    statements = [WRAPPER_TEMPLATE({STATEMENTS: statements})];
   }
 
   ast = t.file(

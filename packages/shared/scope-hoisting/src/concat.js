@@ -30,12 +30,13 @@ import {
   isStringLiteral,
   isVariableDeclaration,
 } from '@babel/types';
+import template from '@babel/template';
 import {simple as walkSimple, traverse} from '@parcel/babylon-walk';
 import {PromiseQueue, relativeUrl, flat, relativePath} from '@parcel/utils';
 import invariant from 'assert';
 import fs from 'fs';
 import nullthrows from 'nullthrows';
-import {assertString, getName, getIdentifier, needsPrelude} from './utils';
+import {assertString, getName, getIdentifier} from './utils';
 
 const HELPERS_PATH = path.join(__dirname, 'helpers.js');
 const HELPERS = parse(
@@ -43,11 +44,10 @@ const HELPERS = parse(
   HELPERS_PATH,
 );
 
-const PRELUDE_PATH = path.join(__dirname, 'prelude.js');
-const PRELUDE = parse(
-  fs.readFileSync(path.join(__dirname, 'prelude.js'), 'utf8'),
-  PRELUDE_PATH,
-);
+const PARCEL_REQUIRE_DECL = template.statement<
+  {|PARCEL_REQUIRE: Identifier|},
+  Statement,
+>(`var parcelRequire = $parcel$global.PARCEL_REQUIRE;`);
 
 type AssetASTMap = Map<string, Array<Statement>>;
 type TraversalContext = {|
@@ -95,20 +95,9 @@ export async function concat({
   let outputs = new Map<string, Array<Statement>>(await queue.run());
   let result = [...HELPERS];
 
-  // Add a declaration for parcelRequire that points to the unique global name.
   if (bundle.env.outputFormat === 'global') {
     result.push(
-      ...parse(
-        `var parcelRequire = $parcel$global.${parcelRequireName};`,
-        PRELUDE_PATH,
-      ),
-    );
-  }
-
-  if (needsPrelude(bundle, bundleGraph)) {
-    result.push(
-      ...parse(`var parcelRequireName = "${parcelRequireName}";`, PRELUDE_PATH),
-      ...PRELUDE,
+      PARCEL_REQUIRE_DECL({PARCEL_REQUIRE: t.identifier(parcelRequireName)}),
     );
   }
 

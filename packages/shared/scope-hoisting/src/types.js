@@ -9,7 +9,7 @@ import type {
   SourceLocation,
 } from '@parcel/types';
 import type {NodePath} from '@babel/traverse';
-import type {Identifier, Program} from '@babel/types';
+import type {Identifier, Statement, Program} from '@babel/types';
 
 export type ExternalModule = {|
   source: ModuleSpecifier,
@@ -30,7 +30,7 @@ export type OutputFormat = {|
     external: ExternalBundle,
     path: NodePath<Program>,
     bundleGraph: BundleGraph<NamedBundle>,
-  ): void,
+  ): Array<Statement>,
   generateExternalImport(
     bundle: NamedBundle,
     external: ExternalModule,

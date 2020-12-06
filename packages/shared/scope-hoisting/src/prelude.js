@@ -1,8 +1,19 @@
 var $parcel$modules = {};
 var $parcel$bundles = {};
 
-if (parcelRequire == null) {
-  parcelRequire = function(name) {
+var $parcel$global =
+  typeof globalThis !== 'undefined'
+    ? globalThis
+    : typeof self !== 'undefined'
+    ? self
+    : typeof window !== 'undefined'
+    ? window
+    : typeof global !== 'undefined'
+    ? global
+    : {};
+
+if ($parcel$global[parcelRequireName] == null) {
+  var parcelRequire = function(name) {
     // Execute the bundle wrapper function if there is one registered.
     if (name in $parcel$bundles) {
       $parcel$bundles[name]();

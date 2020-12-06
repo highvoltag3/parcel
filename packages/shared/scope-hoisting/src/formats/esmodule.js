@@ -11,11 +11,12 @@ import type {
 import type {NodePath} from '@babel/traverse';
 import type {
   ClassDeclaration,
+  ExportSpecifier,
   FunctionDeclaration,
   Identifier,
-  ExportSpecifier,
   ImportDeclaration,
   Program,
+  Statement,
   VariableDeclarator,
 } from '@babel/types';
 import type {ExternalBundle, ExternalModule} from '../types';
@@ -47,7 +48,7 @@ export function generateBundleImports(
   // Implement an interface consistent with other formats
   // eslint-disable-next-line no-unused-vars
   bundleGraph: BundleGraph<NamedBundle>,
-) {
+): Array<Statement> {
   let specifiers = [...assets].map(asset => {
     let id = getName(asset, 'init');
     return t.importSpecifier(t.identifier(id), t.identifier(id));
@@ -64,6 +65,8 @@ export function generateBundleImports(
   )) {
     removeReplaceBinding(path.scope, spec.node.local.name, spec, 'module');
   }
+
+  return [];
 }
 
 export function generateExternalImport(
