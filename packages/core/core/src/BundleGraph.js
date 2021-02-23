@@ -1450,7 +1450,7 @@ export default class BundleGraph {
             (node.excluded || Boolean(node.hasDeferred));
         }
       } else {
-        this._graph.addNode(node);
+        this._graph.addNode2(node);
       }
     }
 

@@ -160,12 +160,12 @@ export default class Graph<TNode: Node, TEdgeType: string | null = null> {
   }
 
   getNodesConnectedFrom(
-    node: TNode,
+    node: TNode | NodeId,
     type: TEdgeType | null | Array<TEdgeType | null> = null,
   ): Array<TNode> {
     // assertHasNode(this, node);
-
-    let outboundByType = this.outboundEdges.getEdgesByType(node.id);
+    let nodeId = typeof node === 'string' ? node : node.id;
+    let outboundByType = this.outboundEdges.getEdgesByType(nodeId);
     if (outboundByType == null) {
       return [];
     }
@@ -413,6 +413,7 @@ export default class Graph<TNode: Node, TEdgeType: string | null = null> {
 
       skipped = false;
       let enter = typeof visit === 'function' ? visit : visit.enter;
+      console.trace('Yayyyyyy');
       if (enter) {
         let newContext = enter(node, context, actions);
         if (typeof newContext !== 'undefined') {
@@ -428,6 +429,7 @@ export default class Graph<TNode: Node, TEdgeType: string | null = null> {
         return context;
       }
 
+      console.log(getChildren(node), node, 'Get Chindren and nodes');
       for (let child of getChildren(node)) {
         if (visited.has(child)) {
           continue;

@@ -69,6 +69,8 @@ export default class MutableBundleGraph extends BundleGraph<IBundle>
   }
 
   createBundleGroup(dependency: IDependency, target: Target): BundleGroup {
+    console.log('create bundle group');
+    console.log(dependency, 'dep');
     let dependencyNode = this.#graph._graph.getNode(dependency.id);
     if (!dependencyNode) {
       throw new Error('Dependency not found');
@@ -137,6 +139,7 @@ export default class MutableBundleGraph extends BundleGraph<IBundle>
   }
 
   createBundle(opts: CreateBundleOpts): Bundle {
+    console.log('Create Bundle');
     let entryAsset = opts.entryAsset
       ? assetToAssetValue(opts.entryAsset)
       : null;
@@ -193,6 +196,7 @@ export default class MutableBundleGraph extends BundleGraph<IBundle>
   }
 
   addBundleToBundleGroup(bundle: IBundle, bundleGroup: BundleGroup) {
+    console.log('Add Bundle to Bundle Group');
     this.#graph.addBundleToBundleGroup(
       bundleToInternalBundle(bundle),
       bundleGroup,

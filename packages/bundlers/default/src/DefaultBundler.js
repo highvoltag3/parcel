@@ -48,6 +48,7 @@ export default (new Bundler({
     // Step 1: create bundles for each of the explicit code split points.
     bundleGraph.traverse({
       enter: (node, context, actions) => {
+        console.log('here 1');
         if (node.type !== 'dependency') {
           return {
             ...context,
@@ -64,6 +65,7 @@ export default (new Bundler({
           actions.skipChildren();
           return;
         }
+        console.log('After skipping');
 
         let assets = bundleGraph.getDependencyAssets(dependency);
         let resolution = bundleGraph.getDependencyResolution(dependency);
@@ -78,7 +80,7 @@ export default (new Bundler({
           let bundleGroup = context?.bundleGroup;
           let bundleByType: Map<string, Bundle> =
             context?.bundleByType ?? new Map();
-
+          console.log('here 2');
           // Only create a new bundle group for entries, async dependencies, and isolated assets.
           // Otherwise, the bundle is loaded together with the parent bundle.
           if (
@@ -91,7 +93,7 @@ export default (new Bundler({
               dependency,
               nullthrows(dependency.target ?? context?.bundleGroup?.target),
             );
-
+            console.log('here 3');
             bundleByType = new Map();
           }
 
